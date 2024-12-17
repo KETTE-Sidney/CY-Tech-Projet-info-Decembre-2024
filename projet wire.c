@@ -77,7 +77,7 @@ AVLNoeud* insererNeoud(AVLNoeud *noeud, int stationID, long capacite, long conso
 
     noeud->taille = 1 + (avoirTaille(noeud->gauche) > avoirTaille(noeud->droite) ? avoirTaille(noeud->gauche) : avoirTaille(noeud->droite));
 
-    int h = equilibre(node);
+    int h = equilibre(noeud);
 
     // Rotation pour équilibrer
     if (h > 1 && stationID < noeud->gauche->stationID)
@@ -86,7 +86,7 @@ AVLNoeud* insererNeoud(AVLNoeud *noeud, int stationID, long capacite, long conso
     if (h < -1 && stationID > noeud->droite->stationID)
         return roationGauche(node);
 
-    if (h > 1 && stationID > node->gauche->stationID) {
+    if (h > 1 && stationID > noeud->gauche->stationID) {
         noeud->gauche = rotationGauche(noeud->gauche);
         return rotationDroite(noeud);
     }
