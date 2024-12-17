@@ -19,20 +19,20 @@ AVLNode* CreerNoeud(int stationID, long capacite, long consommation) {
     }
     noeud->stationID = stationID;
     noeud->capacite = capacite;
-    noeud->consommation = conssomation;
+    noeud->consommation = consomation;
     noeud->taille = 1;
     noeud->gauche = noeud->droit = NULL;
     return noeud;
 }
 
 // ca donne la hauteur du noeud
-int avoirTaille(AVLNoeud *noeud) {
+int getTaille(AVLNoeud *noeud) {
     return noeud ? noeud->taille : 0;
 }
 
 int equilibre(AVLNoeud *noeud) {
     if (!noeud) return 0;
-    return avoirTaille(noeud->gauche) - avoirTaille(noeud->droite);
+    return getTaille(noeud->gauche) - getTaille(noeud->droite);
 }
 
 // Rotation SD
@@ -43,7 +43,7 @@ AVLNode* rotationDroite(AVLNoeud *y) {
     x->droite = y;
     y->gauche = T;
 
-    y->taille = 1 + (avoirTaille(y->gauche) > avoirTaille(y->droite) ? avoirTaille(y->gauche) : avoirTaille(y->droite));
+    y->taille = 1 + (getTaille(y->gauche) > getTaille(y->droite) ? getTaille(y->gauche) : getTaille(y->droite));
 
 
     return x;
@@ -57,8 +57,8 @@ AVLNode* rotationGauche(AVLNoeud *x) {
     y->gauche = x;
     x->droite = T;
 
-    x->taille = 1 + (avoirTaille(x->gauche) > avoirTaille(x->droite) ? avoirTaille(x->gauche) : avoirTaille(x->droite));
-    y->taille = 1 + (avoirTaille(y->gauche) > avoirTaille(y->droite) ? avoirTaille(y->gauche) : avoirTaille(y->droite));
+    x->taille = 1 + (getTaille(x->gauche) > getTaille(x->droite) ? getTaille(x->gauche) : getTaille(x->droite));
+    y->taille = 1 + (getTaille(y->gauche) > getTaille(y->droite) ? getTaille(y->gauche) : getTaille(y->droite));
 
     return y;
 }
@@ -75,7 +75,7 @@ AVLNoeud* insererNeoud(AVLNoeud *noeud, int stationID, long capacite, long conso
         return noeud;
     }
 
-    noeud->taille = 1 + (avoirTaille(noeud->gauche) > avoirTaille(noeud->droite) ? avoirTaille(noeud->gauche) : avoirTaille(noeud->droite));
+    noeud->taille = 1 + (getTaille(noeud->gauche) > getTaille(noeud->droite) ? getTaille(noeud->gauche) : getTaille(noeud->droite));
 
     int h = equilibre(noeud);
 
@@ -99,7 +99,6 @@ AVLNoeud* insererNeoud(AVLNoeud *noeud, int stationID, long capacite, long conso
     return noeud;
 }
 
-// En infixe
 void parcoursInfixe(AVLNoeud *racine) {
     if (racine) {
         parcoursInfixe(racine->gauche);
@@ -108,7 +107,6 @@ void parcoursInfixe(AVLNoeud *racine) {
     }
 }
 
-// c est pour liberer l'AVL
 void freeAVL(AVLNoeud *racine) {
     if (racine) {
         freeAVL(racine->gauche);
@@ -145,7 +143,7 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Usage: %s <fichier CSV>\n", argv[0]);
         return 1;
     }
-//ajouter comentaire sur cette partie... 
+    
     AVLNode *racine = NULL;
 
     lireCSV(argv[1], &racine);
