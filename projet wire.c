@@ -148,11 +148,11 @@ int main(int argc, char *argv[]) {
 //ajouter comentaire sur cette partie... 
     AVLNode *racine = NULL;
 
-    lireCSV(argv[1], &root);
+    lireCSV(argv[1], &racine);
 
     printf("Contenu de l'arbre AVL :\n");
-    parcoursInfixe(root);
-    freeAVL(root);
+    parcoursInfixe(racine);
+    freeAVL(racine);
 
     return 0;
 }
