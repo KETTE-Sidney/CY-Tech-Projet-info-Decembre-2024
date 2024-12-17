@@ -11,7 +11,7 @@ typedef struct AVLNoeud {
     struct AVLNoeud *droite;
 } AVLNoeud;
 
-AVLNode* CreerNoeud(int stationID, long capacite, long consumption) {
+AVLNode* CreerNoeud(int stationID, long capacite, long consommation) {
     AVLNode *noeud = (AVLNoeud*)malloc(sizeof(AVLNoeud));
     if (!noeud) {
         perror("Erreur d'allocation mémoire");
