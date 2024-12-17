@@ -2,125 +2,125 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct AVLNode {
+typedef struct AVLNoeud {
     int stationID;
-    long capacity;   // Capacité en kWh
-    long consumption; // Consommation totale des consommateurs
-    int height;
-    struct AVLNode *left;
-    struct AVLNode *right;
-} AVLNode;
+    long capacite;   // Capacité en kWh
+    long consommation; // Consommation totale des consommateurs
+    int taille;
+    struct AVLNoeud *gauche;
+    struct AVLNoeud *droite;
+} AVLNoeud;
 
-AVLNode* createNode(int stationID, long capacity, long consumption) {
-    AVLNode *node = (AVLNode*)malloc(sizeof(AVLNode));
-    if (!node) {
+AVLNode* CreerNoeud(int stationID, long capacite, long consumption) {
+    AVLNode *noeud = (AVLNoeud*)malloc(sizeof(AVLNoeud));
+    if (!noeud) {
         perror("Erreur d'allocation mémoire");
         exit(EXIT_FAILURE);
     }
-    node->stationID = stationID;
-    node->capacity = capacity;
-    node->consumption = consumption;
-    node->height = 1;
-    node->left = node->right = NULL;
-    return node;
+    noeud->stationID = stationID;
+    noeud->capacite = capacite;
+    noeud->consommation = conssomation;
+    noeud->taille = 1;
+    noeud->gauche = noeud->droit = NULL;
+    return noeud;
 }
 
 // ca donne la hauteur du noeud
-int getHeight(AVLNode *node) {
-    return node ? node->height : 0;
+int avoirTaille(AVLNoeud *noeud) {
+    return noeud ? noeud->taille : 0;
 }
 
-int getBalanceFactor(AVLNode *node) {
-    if (!node) return 0;
-    return getHeight(node->left) - getHeight(node->right);
+int equilibre(AVLNoeud *noeud) {
+    if (!noeud) return 0;
+    return avoirTaille(noeud->gauche) - avoirTaille(noeud->droite);
 }
 
 // Rotation SD
-AVLNode* rotateRight(AVLNode *y) {
-    AVLNode *x = y->left;
-    AVLNode *T = x->right;
+AVLNode* rotationDroite(AVLNoeud *y) {
+    AVLNoeud *x = y->gauche;
+    AVLNoeud *T = x->droite
 
-    x->right = y;
-    y->left = T;
+    x->droite = y;
+    y->gauche = T;
 
-    y->height = 1 + (getHeight(y->left) > getHeight(y->right) ? getHeight(y->left) : getHeight(y->right));
-    x->height = 1 + (getHeight(x->left) > getHeight(x->right) ? getHeight(x->left) : getHeight(x->right));
+    y->taille = 1 + (avoirTaille(y->gauche) > avoirTaille(y->droite) ? avoirTaille(y->gauche) : avoirTaille(y->droite));
+
 
     return x;
 }
 
 // Rotation SG
-AVLNode* rotateLeft(AVLNode *x) {
-    AVLNode *y = x->right;
-    AVLNode *T = y->left;
+AVLNode* rotationGauche(AVLNoeud *x) {
+    AVLNoeud *y = x->droite;
+    AVLNoeud *T = y->gauche;
 
-    y->left = x;
-    x->right = T;
+    y->gauche = x;
+    x->droite = T;
 
-    x->height = 1 + (getHeight(x->left) > getHeight(x->right) ? getHeight(x->left) : getHeight(x->right));
-    y->height = 1 + (getHeight(y->left) > getHeight(y->right) ? getHeight(y->left) : getHeight(y->right));
+    x->taille = 1 + (avoirTaille(x->gauche) > avoirTaille(x->droite) ? avoirTaille(x->gauche) : avoirTaille(x->droite));
+    y->taille = 1 + (avoirTaille(y->gauche) > avoirTaille(y->droite) ? avoirTaille(y->gauche) : avoirTaille(y->droite));
 
     return y;
 }
 
-AVLNode* insertNode(AVLNode *node, int stationID, long capacity, long consumption) {
-    if (!node) return createNode(stationID, capacity, consumption);
+AVLNoeud* insererNeoud(AVLNoeud *noeud, int stationID, long capacite, long consommation) {
+    if (!noeud) return creerNoeud(stationID, capacite, consommation);
 
-    if (stationID < node->stationID)
-        node->left = insertNode(node->left, stationID, capacity, consumption);
-    else if (stationID > node->stationID)
-        node->right = insertNode(node->right, stationID, capacity, consumption);
+    if (stationID < noeud->stationID)
+        noeud->gauche = insererNoeud(noeud->gauche, stationID, capacite, consommation);
+    else if (stationID > noeud->stationID)
+        noeud->droite = insererNoeud(noeud->droite, stationID, capacite, consommation);
     else { // Si le nœud existe déjà, on met à jour sa consommation
-        node->consumption += consumption;
-        return node;
+        noeud->consommation += consommation;
+        return noeud;
     }
 
-    node->height = 1 + (getHeight(node->left) > getHeight(node->right) ? getHeight(node->left) : getHeight(node->right));
+    noeud->taille = 1 + (avoirTaille(noeud->gauche) > avoirTaille(noeud->droite) ? avoirTaille(noeud->gauche) : avoirTaille(noeud->droite));
 
-    int balance = getBalanceFactor(node);
+    int h = equilibre(node);
 
     // Rotation pour équilibrer
-    if (balance > 1 && stationID < node->left->stationID)
-        return rotateRight(node);
+    if (h > 1 && stationID < noeud->gauche->stationID)
+        return rotationDroite(noeud);
 
-    if (balance < -1 && stationID > node->right->stationID)
-        return rotateLeft(node);
+    if (h < -1 && stationID > noeud->droite->stationID)
+        return roationGauche(node);
 
-    if (balance > 1 && stationID > node->left->stationID) {
-        node->left = rotateLeft(node->left);
-        return rotateRight(node);
+    if (h > 1 && stationID > node->gauche->stationID) {
+        noeud->gauche = rotationGauche(noeud->gauche);
+        return rotationDroite(noeud);
     }
 
-    if (balance < -1 && stationID < node->right->stationID) {
-        node->right = rotateRight(node->right);
-        return rotateLeft(node);
+    if (h < -1 && stationID < noeud->droite->stationID) {
+        noeud->droite = rotationDroite(noeud->droite)
+        return rotationGauche(noeud);
     }
 
-    return node;
+    return noeud;
 }
 
 // En infixe
-void inorderTraversal(AVLNode *root) {
-    if (root) {
-        inorderTraversal(root->left);
-        printf("Station ID: %d, Capacity: %ld, Consumption: %ld\n", root->stationID, root->capacity, root->consumption);
-        inorderTraversal(root->right);
+void parcoursInfixe(AVLNoeud *racine) {
+    if (racine) {
+        parcoursInfixe(racine->gauche);
+        printf("Station ID: %d, Capacite: %ld, Consommation: %ld\n", racine->stationID, racine->capacite, racine->consommation);
+        parcoursInfixe(racine->droite);
     }
 }
 
 // c est pour liberer l'AVL
-void freeAVL(AVLNode *root) {
-    if (root) {
-        freeAVL(root->left);
-        freeAVL(root->right);
-        free(root);
+void freeAVL(AVLNoeud *racine) {
+    if (racine) {
+        freeAVL(racine->gauche);
+        freeAVL(racine->droite);
+        free(racine);
     }
 }
 
 
 // traitement csv
 
-void readCSV(const char *filename, AVLNode **root) {
+void lireCSV(const char *filenom, AVLNoeud **racine) {
     FILE *file = fopen(filename, "r");
     if (!file) {
         perror("Erreur lors de l'ouverture du fichier");
@@ -130,10 +130,10 @@ void readCSV(const char *filename, AVLNode **root) {
     char line[256];
     while (fgets(line, sizeof(line), file)) {
         int stationID;
-        long capacity = 0, consumption = 0;
+        long capacite = 0, consommation = 0;
 
-        sscanf(line, "%d;%ld;%ld", &stationID, &capacity, &consumption);
-        *root = insertNode(*root, stationID, capacity, consumption);
+        sscanf(line, "%d;%ld;%ld", &stationID, &capacite, &consommation);
+        *racine = insererNoeud(*racine, stationID, capacite, consommation);
     }
 
     fclose(file);
@@ -146,12 +146,12 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 //ajouter comentaire sur cette partie... 
-    AVLNode *root = NULL;
+    AVLNode *racine = NULL;
 
-    readCSV(argv[1], &root);
+    lireCSV(argv[1], &root);
 
     printf("Contenu de l'arbre AVL :\n");
-    inorderTraversal(root);
+    parcoursInfixe(root);
     freeAVL(root);
 
     return 0;
