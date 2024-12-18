@@ -11,46 +11,47 @@ typedef struct AVLNoeud {
     struct AVLNoeud *droite;
 } AVLNoeud;
 
-AVLNode* CreerNoeud(int stationID, long capacite, long consommation) {
-    AVLNode *noeud = (AVLNoeud*)malloc(sizeof(AVLNoeud));
+AVLNoeud* creerNoeud(int stationID, long capacite, long consommation) {
+    AVLNoeud *noeud = (AVLNoeud*)malloc(sizeof(AVLNoeud));
     if (!noeud) {
         perror("Erreur d'allocation mémoire");
         exit(EXIT_FAILURE);
     }
     noeud->stationID = stationID;
     noeud->capacite = capacite;
-    noeud->consommation = consomation;
+    noeud->consommation = consommation;
     noeud->taille = 1;
-    noeud->gauche = noeud->droit = NULL;
+    noeud->gauche = noeud->droite = NULL;
     return noeud;
 }
 
-// ca donne la hauteur du noeud
+// Fonction pour obtenir la hauteur d'un noeud
 int getTaille(AVLNoeud *noeud) {
     return noeud ? noeud->taille : 0;
 }
 
+// Calculer le facteur d'équilibre
 int equilibre(AVLNoeud *noeud) {
     if (!noeud) return 0;
     return getTaille(noeud->gauche) - getTaille(noeud->droite);
 }
 
-// Rotation SD
-AVLNode* rotationDroite(AVLNoeud *y) {
+// Rotation droite
+AVLNoeud* rotationDroite(AVLNoeud *y) {
     AVLNoeud *x = y->gauche;
-    AVLNoeud *T = x->droite
+    AVLNoeud *T = x->droite;
 
     x->droite = y;
     y->gauche = T;
 
     y->taille = 1 + (getTaille(y->gauche) > getTaille(y->droite) ? getTaille(y->gauche) : getTaille(y->droite));
-
+    x->taille = 1 + (getTaille(x->gauche) > getTaille(x->droite) ? getTaille(x->gauche) : getTaille(x->droite));
 
     return x;
 }
 
-// Rotation SG
-AVLNode* rotationGauche(AVLNoeud *x) {
+// Rotation gauche
+AVLNoeud* rotationGauche(AVLNoeud *x) {
     AVLNoeud *y = x->droite;
     AVLNoeud *T = y->gauche;
 
@@ -63,7 +64,7 @@ AVLNode* rotationGauche(AVLNoeud *x) {
     return y;
 }
 
-AVLNoeud* insererNeoud(AVLNoeud *noeud, int stationID, long capacite, long consommation) {
+AVLNoeud* insererNoeud(AVLNoeud *noeud, int stationID, long capacite, long consommation) {
     if (!noeud) return creerNoeud(stationID, capacite, consommation);
 
     if (stationID < noeud->stationID)
@@ -84,7 +85,7 @@ AVLNoeud* insererNeoud(AVLNoeud *noeud, int stationID, long capacite, long conso
         return rotationDroite(noeud);
 
     if (h < -1 && stationID > noeud->droite->stationID)
-        return roationGauche(node);
+        return rotationGauche(noeud);
 
     if (h > 1 && stationID > noeud->gauche->stationID) {
         noeud->gauche = rotationGauche(noeud->gauche);
@@ -92,7 +93,7 @@ AVLNoeud* insererNeoud(AVLNoeud *noeud, int stationID, long capacite, long conso
     }
 
     if (h < -1 && stationID < noeud->droite->stationID) {
-        noeud->droite = rotationDroite(noeud->droite)
+        noeud->droite = rotationDroite(noeud->droite);
         return rotationGauche(noeud);
     }
 
@@ -115,10 +116,8 @@ void freeAVL(AVLNoeud *racine) {
     }
 }
 
-
-// traitement csv
-
-void lireCSV(const char *filenom, AVLNoeud **racine) {
+// Traitement du fichier CSV
+void lireCSV(const char *filename, AVLNoeud **racine) {
     FILE *file = fopen(filename, "r");
     if (!file) {
         perror("Erreur lors de l'ouverture du fichier");
@@ -137,14 +136,13 @@ void lireCSV(const char *filenom, AVLNoeud **racine) {
     fclose(file);
 }
 
-
 int main(int argc, char *argv[]) {
     if (argc != 2) {
         fprintf(stderr, "Usage: %s <fichier CSV>\n", argv[0]);
         return 1;
     }
-    
-    AVLNode *racine = NULL;
+
+    AVLNoeud *racine = NULL;
 
     lireCSV(argv[1], &racine);
 
