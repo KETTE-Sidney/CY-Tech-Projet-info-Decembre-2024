@@ -1,16 +1,25 @@
+# Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c99
-SRC = main.c avl_tree.c
-OBJ = $(SRC:.c=.o)
+CFLAGS = -Wall -Wextra -g
 
-all: bin/main
+# Target
+TARGET = main
 
-bin/main: $(OBJ)
-    @mkdir -p bin
-    $(CC) $(CFLAGS) -o bin/main $(OBJ)
+.PHONY: all clean run
 
-%.o: %.c
-    $(CC) $(CFLAGS) -c $< -o $@
+# Default target
+all: $(TARGET)
 
+# Compile the program
+$(TARGET): main.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+# Clean build files
 clean:
-    rm -f $(OBJ) bin/main
+	rm -f $(TARGET)
+
+# Run the program
+run: all
+	chmod +x c-wire.sh
+	./c-wire.sh input.csv hvb comp
+
