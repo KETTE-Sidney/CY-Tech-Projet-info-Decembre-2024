@@ -3,7 +3,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -g
 
 # Target
-TARGET = main
+TARGET = projetwire
 
 .PHONY: all clean run
 
@@ -11,7 +11,7 @@ TARGET = main
 all: $(TARGET)
 
 # Compile the program
-$(TARGET): main.c
+$(TARGET): projetwire.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 # Clean build files
