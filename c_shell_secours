@@ -1,69 +1,90 @@
 #!/bin/bash
 
-# Fonction pour afficher l'aide
+# Function to display help
 show_help() {
-    echo "Usage: $0 <data_file> <output_directory> <station_type>"
+    echo "Usage: $0 <data_file> <station_type> <consumer_type> [central_id]"
     echo
     echo "Arguments:"
     echo "  data_file       Chemin vers le fichier CSV d'entrée (obligatoire)."
-    echo "  output_directory Dossier pour enregistrer les résultats (obligatoire)."
     echo "  station_type    Type de station à traiter (obligatoire) : hvb, hva, lv."
+    echo "  consumer_type   Type de consommateur à traiter (obligatoire) : comp, indiv, all."
+    echo "  central_id      Optionnel : Filtrer les résultats par ID central."
     echo
     echo "Options:"
     echo "  -h              Afficher ce message d'aide."
     echo
     echo "Examples:"
-    echo "  $0 input.csv output/ hvb"
-    echo "  $0 input.csv output/ lv"
+    echo "  $0 input/data.csv hvb comp"
+    echo "  $0 input/data.csv lv all 1"
     exit 0
 }
 
-# Vérification des arguments et affichage de l'aide si nécessaire
+# Check if help is requested
 if [[ "$1" == "-h" ]]; then
     show_help
 fi
 
-if [[ $# -ne 3 ]]; then
+# Validate the number of arguments
+if [[ $# -lt 3 ]]; then
     echo "Erreur : Arguments manquants."
     show_help
 fi
 
-# Assignation des arguments
+# Assign arguments to variables
 DATA_FILE=$1
-OUTPUT_DIR=$2
-STATION_TYPE=$3
+STATION_TYPE=$2
+CONSUMER_TYPE=$3
+CENTRAL_ID=${4:-"all"}  # Default to "all" if not provided
 
-# Validation du fichier d'entrée
+# Validate input file
 if [[ ! -f "$DATA_FILE" ]]; then
     echo "Erreur : Fichier d'entrée '$DATA_FILE' introuvable."
     exit 1
 fi
 
-# Validation du type de station
+# Validate station type
 if [[ "$STATION_TYPE" != "hvb" && "$STATION_TYPE" != "hva" && "$STATION_TYPE" != "lv" ]]; then
-    echo "Erreur : Type de station invalide '$STATION_TYPE'. Doit être l'un des suivants : hvb, hva, lv."
+    echo "Erreur : Type de station invalide '$STATION_TYPE'."
     exit 1
 fi
 
-# Création des répertoires nécessaires
-mkdir -p tmp "$OUTPUT_DIR" graphs
+# Validate consumer type
+if [[ "$CONSUMER_TYPE" != "comp" && "$CONSUMER_TYPE" != "indiv" && "$CONSUMER_TYPE" != "all" ]]; then
+    echo "Erreur : Type de consommateur invalide '$CONSUMER_TYPE'."
+    exit 1
+fi
 
-# Fichier temporaire pour les données filtrées
-FILTERED_FILE="tmp/filtered_${STATION_TYPE}.csv"
+# Handle invalid combinations of station and consumer types
+if { [[ "$STATION_TYPE" == "hvb" || "$STATION_TYPE" == "hva" ]] && [[ "$CONSUMER_TYPE" == "all" || "$CONSUMER_TYPE" == "indiv" ]]; }; then
+    echo "Erreur : Type de consommateur '$CONSUMER_TYPE' n'est pas autorisé avec le type de station '$STATION_TYPE'."
+    exit 1
+fi
 
-# Filtrage des données par type de station
-awk -F':' -v type="$STATION_TYPE" 'BEGIN { OFS=":"; print "StationID:Capacite:Consommation:Type" } $4 == type { print $1, $2, $3, $4 }' "$DATA_FILE" > "$FILTERED_FILE"
+# Create necessary directories
+mkdir -p tmp tests graphs
 
-# Vérification si des données ont été filtrées
+# Filter data
+FILTERED_FILE="tmp/filtered_${STATION_TYPE}_${CONSUMER_TYPE}.csv"
+awk -F':' -v station="$STATION_TYPE" -v central="$CENTRAL_ID" '
+BEGIN { OFS=":"; print "StationID:Capacite:Consommation:Type" }
+{
+    # Filter data based on station type and central ID
+    if (central == "all" || $1 == central) {
+        if ($4 == station) print $1, $2, $3, $4
+    }
+}' "$DATA_FILE" > "$FILTERED_FILE"
+
+# Check if filtered file is empty
 if [[ ! -s "$FILTERED_FILE" ]]; then
-    echo "Erreur : Aucune donnée trouvée pour le type de station '$STATION_TYPE'."
+    echo "Erreur : Aucune donnée trouvée correspondant aux filtres."
     exit 1
 fi
 
-# Calcul des totaux et vérification de la production
+# Calculate totals
 TOTAL_CAPACITE=$(awk -F':' 'NR > 1 { sum += $2 } END { print sum }' "$FILTERED_FILE")
 TOTAL_CONSOMMATION=$(awk -F':' 'NR > 1 { sum += $3 } END { print sum }' "$FILTERED_FILE")
 
+# Check production status
 if [[ "$TOTAL_CAPACITE" -gt "$TOTAL_CONSOMMATION" ]]; then
     PRODUCTION_STATUS="Sous-production"
 elif [[ "$TOTAL_CAPACITE" -lt "$TOTAL_CONSOMMATION" ]]; then
@@ -72,42 +93,42 @@ else
     PRODUCTION_STATUS="Équilibrée"
 fi
 
-# Écriture des résultats dans un fichier de résumé
-SUMMARY_FILE="$OUTPUT_DIR/summary_${STATION_TYPE}.txt"
-echo "Résumé des stations ($STATION_TYPE):" > "$SUMMARY_FILE"
+# Write summary to file
+SUMMARY_FILE="tests/summary_${STATION_TYPE}_${CONSUMER_TYPE}.txt"
+echo "Résumé des stations ($STATION_TYPE, $CONSUMER_TYPE):" > "$SUMMARY_FILE"
 echo "Capacité totale : $TOTAL_CAPACITE" >> "$SUMMARY_FILE"
 echo "Consommation totale : $TOTAL_CONSOMMATION" >> "$SUMMARY_FILE"
 echo "Production globale : $PRODUCTION_STATUS" >> "$SUMMARY_FILE"
 
-# Compilation et exécution du programme C
-make -s
-if [[ $? -ne 0 ]]; then
-    echo "Erreur : La compilation du programme C a échoué."
-    exit 1
+# Compile and execute the C program
+cd codeC
+if [[ ! -f main ]]; then
+    echo "Compilation du programme C..."
+    make
+    if [[ $? -ne 0 ]]; then
+        echo "Erreur : La compilation a échoué."
+        exit 1
+    fi
 fi
+cd ..
 
-OUTPUT_FILE="$OUTPUT_DIR/results_${STATION_TYPE}.csv"
-./bin/main "$FILTERED_FILE" "$OUTPUT_FILE" "$STATION_TYPE"
+OUTPUT_FILE="tests/results_${STATION_TYPE}_${CONSUMER_TYPE}.csv"
+./codeC/main "$FILTERED_FILE" "$OUTPUT_FILE" "$STATION_TYPE"
 
 if [[ $? -ne 0 ]]; then
     echo "Erreur : Le programme C a rencontré un problème."
     exit 1
 fi
 
-# Gestion des graphiques pour "lv all"
-if [[ "$STATION_TYPE" == "lv" ]]; then
+# Special case for lv all
+if [[ "$STATION_TYPE" == "lv" && "$CONSUMER_TYPE" == "all" ]]; then
     GRAPH_FILE="graphs/lv_minmax.png"
-    MINMAX_FILE="$OUTPUT_DIR/lv_minmax.csv"
+    MINMAX_FILE="tests/lv_minmax.csv"
 
-    echo "StationID:Capacite:Consommation" > "$MINMAX_FILE"
-
-    # Extraction des 10 stations avec la plus forte consommation
+    echo "StationID:Capacity:Consumption" > "$MINMAX_FILE"
     tail -n +2 "$OUTPUT_FILE" | sort -t: -k3nr | head -n 10 >> "$MINMAX_FILE"
-
-    # Extraction des 10 stations avec la plus faible consommation
     tail -n +2 "$OUTPUT_FILE" | sort -t: -k3n | head -n 10 >> "$MINMAX_FILE"
 
-    # Génération du graphique
     gnuplot <<-EOF
         set terminal png size 1000,700
         set output "$GRAPH_FILE"
@@ -125,13 +146,5 @@ EOF
     echo "Graphique généré : $GRAPH_FILE"
 fi
 
-# Afficher un résumé
-echo "Résumé des résultats pour le type de station '$STATION_TYPE' :"
-cat "$SUMMARY_FILE"
+echo "Traitement terminé. Résumé et résultats enregistrés dans 'tests/'."
 
-# Nettoyage
-rm "$FILTERED_FILE"
-
-# Message de fin
-echo "Résultats enregistrés dans '$OUTPUT_FILE' et '$SUMMARY_FILE'."
-echo "Traitement terminé avec succès."
