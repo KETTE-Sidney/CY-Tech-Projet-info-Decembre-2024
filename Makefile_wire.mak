@@ -10,7 +10,7 @@ main: projetwire.o
         $(CC) $(CFLAGS) -o main projetwire.o
 
 # Compiling the main file
-main.o: projetwire.c
+projetwire.o: projetwire.c
         $(CC) $(CFLAGS) -c projetwire.c
 
 
