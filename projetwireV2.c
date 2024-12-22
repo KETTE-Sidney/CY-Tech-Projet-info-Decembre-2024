@@ -101,17 +101,6 @@ AVLNoeud* insererNoeud(AVLNoeud *noeud, int stationID, long capacite, long conso
 
     return noeud;
 }
-// fonction detecter sur ou sous production
-/*const char* verifierProduction(long capacite, long consommation) {
-    if (capacite > consommation) {
-        return "Sous-production";
-    } else if (capacite < consommation) { //
-        return "Surproduction";
-    } else {
-        return "Équilibrée";
-    }
-}
-*/
 void parcoursInfixe(AVLNoeud *racine) {
     if (racine) {
         parcoursInfixe(racine->gauche);
@@ -127,6 +116,53 @@ void freeAVL(AVLNoeud *racine) {
         free(racine);
     }
 }
+// fonction detecter sur ou sous production
+/*const char* verifierProduction(long capacite, long consommation) {
+    if (capacite > consommation) {
+        return "Sous-production";
+    } else if (capacite < consommation) { //
+        return "Surproduction";
+    } else {
+        return "Équilibrée";
+    }
+}
+*/
+// Calculer la somme des consommations dans l'arbre
+
+/* 
+// Calculer la somme des consommations dans l'arbre
+long sommeConsommations(AVLNoeud *racine) {
+    if (!racine) return 0;
+    return racine->consommation + sommeConsommations(racine->gauche) + sommeConsommations(racine->droite);
+}
+
+// Calculer la somme des capacités dans l'arbre
+long sommeCapacites(AVLNoeud *racine) {
+    if (!racine) return 0;
+    return racine->capacite + sommeCapacites(racine->gauche) + sommeCapacites(racine->droite);
+}
+
+// Compter le nombre de nœuds dans l'arbre
+int compterNoeuds(AVLNoeud *racine) {
+    if (!racine) return 0;
+    return 1 + compterNoeuds(racine->gauche) + compterNoeuds(racine->droite);
+}
+
+// Rechercher un noeud spécifique
+AVLNoeud* rechercherStation(AVLNoeud *racine, int stationID) {
+    if (!racine || racine->stationID == stationID)
+        return racine;
+    if (stationID < racine->stationID)
+        return rechercherStation(racine->gauche, stationID);
+    return rechercherStation(racine->droite, stationID);
+}
+*/
+
+
+
+
+
+
 
 // Traitement du fichier CSV
 void lireCSV(const char *filename, AVLNoeud **racine) {
