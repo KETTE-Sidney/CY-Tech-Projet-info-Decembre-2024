@@ -6,7 +6,7 @@ typedef struct AVLNoeud {
     int stationID;
     long capacite;   // Capacité en kWh
     long consommation; // Consommation totale des consommateurs
-    int taille;
+    int hauteur;
     struct AVLNoeud *gauche;
     struct AVLNoeud *droite;
 } AVLNoeud;
@@ -15,26 +15,28 @@ AVLNoeud* creerNoeud(int stationID, long capacite, long consommation) {
     AVLNoeud *noeud = (AVLNoeud*)malloc(sizeof(AVLNoeud));
     if (!noeud) {
         perror("Erreur d'allocation mémoire");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
     noeud->stationID = stationID;
     noeud->capacite = capacite;
     noeud->consommation = consommation;
-    noeud->taille = 1;
+    noeud->hauteur = 1;
     noeud->gauche = noeud->droite = NULL;
     return noeud;
 }
 
 // Fonction pour obtenir la hauteur d'un noeud
-int getTaille(AVLNoeud *noeud) {
-    return noeud ? noeud->taille : 0;
+int gethauteur(AVLNoeud *noeud) {
+    return noeud ? noeud->hauteur : 0;
 }
 
 // Calculer le facteur d'équilibre
 int equilibre(AVLNoeud *noeud) {
     if (!noeud) return 0;
-    return getTaille(noeud->gauche) - getTaille(noeud->droite);
+    return gethauteur(noeud->gauche) - gethauteur(noeud->droite);
 }
+// possible en une fois avec  return noeud ? hauteur(noeud->gauche) - hauteur(noeud->droite) : 0;
+
 
 // Rotation droite
 AVLNoeud* rotationDroite(AVLNoeud *y) {
@@ -44,8 +46,8 @@ AVLNoeud* rotationDroite(AVLNoeud *y) {
     x->droite = y;
     y->gauche = T;
 
-    y->taille = 1 + (getTaille(y->gauche) > getTaille(y->droite) ? getTaille(y->gauche) : getTaille(y->droite));
-    x->taille = 1 + (getTaille(x->gauche) > getTaille(x->droite) ? getTaille(x->gauche) : getTaille(x->droite));
+    y->taille = 1 + (gethauteur(y->gauche) > gethauteur(y->droite) ? gethauteur(y->gauche) : gethauteur(y->droite));
+    x->taille = 1 + (gethauteur(x->gauche) > gethauteur(x->droite) ? gethauteur(x->gauche) : gethauteur(x->droite));
 
     return x;
 }
@@ -58,14 +60,14 @@ AVLNoeud* rotationGauche(AVLNoeud *x) {
     y->gauche = x;
     x->droite = T;
 
-    x->taille = 1 + (getTaille(x->gauche) > getTaille(x->droite) ? getTaille(x->gauche) : getTaille(x->droite));
-    y->taille = 1 + (getTaille(y->gauche) > getTaille(y->droite) ? getTaille(y->gauche) : getTaille(y->droite));
+    x->taille = 1 + (gethauteur(x->gauche) > gethauteur(x->droite) ? gethauteur(x->gauche) : gethauteur(x->droite));
+    y->taille = 1 + (gethauteur(y->gauche) > gethauteur(y->droite) ? gethauteur(y->gauche) : gethauteur(y->droite));
 
     return y;
 }
 
 AVLNoeud* insererNoeud(AVLNoeud *noeud, int stationID, long capacite, long consommation) {
-    if (!noeud) return creerNoeud(stationID, capacite, consommation);
+    if (!noeud) { return creerNoeud(stationID, capacite, consommation); }
 
     if (stationID < noeud->stationID)
         noeud->gauche = insererNoeud(noeud->gauche, stationID, capacite, consommation);
@@ -76,7 +78,7 @@ AVLNoeud* insererNoeud(AVLNoeud *noeud, int stationID, long capacite, long conso
         return noeud;
     }
 
-    noeud->taille = 1 + (getTaille(noeud->gauche) > getTaille(noeud->droite) ? getTaille(noeud->gauche) : getTaille(noeud->droite));
+    noeud->hauteur = 1 + (gethauteur(noeud->gauche) > gethauteur(noeud->droite) ? gethauteur(noeud->gauche) : gethauteur(noeud->droite));
 
     int h = equilibre(noeud);
 
@@ -117,14 +119,14 @@ void freeAVL(AVLNoeud *racine) {
 }
 
 // Traitement du fichier CSV
-void lireCSV(const char *filename, AVLNoeud **racine, const char *station_type, const char *consumer_type, int plant_id) {
+void lireCSV(const char *filename, AVLNoeud **racine) {
     FILE *file = fopen(filename, "r");
     if (!file) {
-        perror("Erreur lors de l'ouverture du fichier");
-        exit(EXIT_FAILURE);
+        perror("Erreur lors de l'ouverture du fichier d'entrée");
+        exit(1);
     }
 
-    char line[256];
+   char line[256];
     while (fgets(line, sizeof(line), file)) {
         int stationID;
         long capacite = 0, consommation = 0;
@@ -145,19 +147,25 @@ void lireCSV(const char *filename, AVLNoeud **racine, const char *station_type, 
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 5) {
-        fprintf(stderr, "Usage: %s <fichier CSV> <station_type> <consumer_type> <plant_id>\n", argv[0]);
+    if (argc != 3) {
+        fprintf(stderr, "Usage: %s <fichier CSV> <output_file>\n", argv[0]);
         return 1;
     }
 
-    const char *filename = argv[1];
-    const char *station_type = argv[2];
-    const char *consumer_type = argv[3];
-    int plant_id = atoi(argv[4]);
-
+    const char* input_file = argv[1];
+    const char* output_file = argv[2];
+    const char *station_type = argv[3];
+    
     AVLNoeud *racine = NULL;
 
-    lireCSV(filename, &racine, station_type, consumer_type, plant_id);
+    lireCSV(argv[1], &racine);
+
+FILE* output = fopen(output_file, "w");
+    if (!output) {
+        perror("Erreur lors de l'ouverture du fichier de sortie.");
+        fclose(input);
+        return 1;
+    }
 
     printf("Contenu de l'arbre AVL :\n");
     parcoursInfixe(racine);
@@ -165,3 +173,79 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+
+/*int main(int argc, char* argv[]) {
+    if (argc < 3) {
+        fprintf(stderr, "Usage: %s <input_file> <output_file>\n", argv[0]);
+        return 1;
+    }
+
+    const char* input_file = argv[1];
+    const char* output_file = argv[2];
+    const char *station_type = argv[3]; // Récupération du STATION_TYPE
+
+    FILE* input = fopen(input_file, "r");
+    if (!input) {
+        perror("Erreur lors de l'ouverture du fichier d'entrée.");
+        return 1;
+    }
+
+    FILE* output = fopen(output_file, "w");
+    if (!output) {
+        perror("Erreur lors de l'ouverture du fichier de sortie.");
+        fclose(input);
+        return 1;
+    }
+
+    AVLNode* root = NULL;
+    char line[256];
+
+    // Lire les données et insérer dans l'arbre AVL
+    while (fgets(line, sizeof(line), input)) {
+        // Suppression des sauts de ligne
+        line[strcspn(line, "\n")] = 0;
+
+        if ((strncmp(line, "LV Station:Capacity:Load", 24) == 0 && strcmp(station_type, "lv") == 0) ||
+            (strncmp(line, "HV-A Station:Capacity:Load", 25) == 0 && strcmp(station_type, "hva") == 0) ||
+            (strncmp(line, "HV-B Station:Capacity:Load", 25) == 0 && strcmp(station_type, "hvb") == 0)) {
+            printf("DEBUG : Ligne d'en-tête ignorée : %s\n", line);
+            continue;
+        }
+
+
+        char* token = strtok(line, ":");
+        if (!token) {
+            fprintf(stderr, "DEBUG : Ligne ignorée (station_id manquant) : %s\n", line);
+            continue;
+        }
+        long station_id = parse_long(token);
+
+        token = strtok(NULL, ":");
+        if (!token) {
+            fprintf(stderr, "DEBUG : Ligne ignorée (station_id manquant) : %s\n", line);
+            continue;
+        }
+        long capacity = parse_long(token);
+
+        token = strtok(NULL, ":");
+        if (!token) {
+            fprintf(stderr, "DEBUG : Ligne ignorée (station_id manquant) : %s\n", line);
+            continue;
+        }
+        long load = parse_long(token);
+
+        
+        root = insert(root, station_id, capacity, load);
+    }
+
+    // Écrire les résultats triés par station ID
+    fprintf(output, "StationID:Capacity:Consumption\n");
+    inorder_traversal(root, output);
+
+    // Libérer la mémoire et fermer les fichiers
+    free_tree(root);
+    fclose(input);
+    fclose(output);
+
+    return 0;
+}*/ 
