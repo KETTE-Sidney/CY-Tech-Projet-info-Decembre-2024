@@ -96,20 +96,6 @@ codeC/ : Contient le code source C et le Makefile.
 tests/ : Contient les résultats générés par le programme.
 tmp/ : Dossier temporaire (créé automatiquement par le script).
 
-Arborescence:
 
-C-Wire/
-├── README.md
-├── c-wire.sh
-├── codeC/
-│   ├── main.c
-│   ├── avl.c
-│   ├── avl.h
-│   ├── utils.c
-│   ├── utils.h
-│   └── Makefile
-├── data.csv
-└── tests/
-    ├── hva_comp.csv
-    └── lv_all_minmax.csv
+
 
