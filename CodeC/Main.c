@@ -5,14 +5,14 @@
 
 #define BUFFER_SIZE 256
 
-void readCSV(const char* filename, AVLNode** root) {
+void readCSV(const char* filename, AVLNode** root, const char* stationType) {
     FILE* file = fopen(filename, "r");
     if (!file) {
         perror("Error opening CSV file");
         exit(EXIT_FAILURE);
     }
 
-    char line[256];
+    char line[BUFFER_SIZE];
     fgets(line, sizeof(line), file); // Skip the header
 
     while (fgets(line, sizeof(line), file)) {
@@ -22,12 +22,19 @@ void readCSV(const char* filename, AVLNode** root) {
         sscanf(line, "%*[^;];%15[^;];%15[^;];%15[^;];%*[^;];%*[^;];%ld;%ld",
                hvbStationStr, hvaStationStr, lvStationStr, &capacity, &load);
 
-        // Convert station strings to integers or skip if "-"
-        int hvaStation = (strcmp(hvaStationStr, "-") == 0) ? -1 : atoi(hvaStationStr);
+        int stationID = -1;
 
-        if (hvaStation != -1) { // Filter HV-A stations
-            *root = insertNode(*root, hvaStation, capacity, load);
-            printf("Inserting: StationID=%d, Capacity=%ld, Consumption=%ld\n", hvaStation, capacity, load);
+        if (strcmp(stationType, "hva") == 0 && strcmp(hvaStationStr, "-") != 0) {
+            stationID = atoi(hvaStationStr);
+        } else if (strcmp(stationType, "hvb") == 0 && strcmp(hvbStationStr, "-") != 0) {
+            stationID = atoi(hvbStationStr);
+        } else if (strcmp(stationType, "lv") == 0 && strcmp(lvStationStr, "-") != 0) {
+            stationID = atoi(lvStationStr);
+        }
+
+        if (stationID != -1 && (capacity > 0 || load > 0)) {
+            *root = insertNode(*root, stationID, capacity, load);
+            printf("Inserting: StationID=%d, Capacity=%ld, Consumption=%ld\n", stationID, capacity, load);
         }
     }
 
@@ -44,10 +51,13 @@ int main(int argc, char* argv[]) {
     const char* outputFile = argv[2];
     const char* stationType = argv[3];
 
-    (void)stationType; // Supprime l'avertissement si la variable n'est pas utilisée
+    if (strcmp(stationType, "hvb") != 0 && strcmp(stationType, "hva") != 0 && strcmp(stationType, "lv") != 0) {
+        fprintf(stderr, "Error: Invalid station type '%s'. Must be 'hvb', 'hva', or 'lv'.\n", stationType);
+        return EXIT_FAILURE;
+    }
 
     AVLNode* root = NULL;
-    readCSV(inputFile, &root);
+    readCSV(inputFile, &root, stationType);
 
     FILE* output = fopen(outputFile, "w");
     if (!output) {
