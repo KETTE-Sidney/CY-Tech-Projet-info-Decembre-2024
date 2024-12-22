@@ -184,16 +184,23 @@ AVLNoeud* lireCSV(const char* nomFichier) {
 
 
 int main(int argc, char *argv[]) {
-    if (argc != 3) {
-        fprintf(stderr, "Usage: %s <fichier CSV> <output_file>\n", argv[0]);
+    if (argc != 4) {  
+        fprintf(stderr, "Usage: %s <fichier CSV> <output_file> <type_station>\n", argv[0]);
         return 1;
     }
+const char* type_station = argv[3];  // **Nouvel argument pour filtrer les types de stations**
+
 
     const char* input = argv[1];
     const char* output = argv[2];
     const char *station_type = argv[3];
 
     AVLNoeud* racine = lireCSV(input);
+    if (!racine) {  
+        fprintf(stderr, "Aucune donnée valide trouvée dans le fichier CSV.\n");
+        return 1;
+    }
+
 
      // Calculer les statistiques
     long totalCapacite = sommeCapacites(racine);
