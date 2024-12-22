@@ -46,8 +46,8 @@ AVLNoeud* rotationDroite(AVLNoeud *y) {
     x->droite = y;
     y->gauche = T;
 
-    y->taille = 1 + (gethauteur(y->gauche) > gethauteur(y->droite) ? gethauteur(y->gauche) : gethauteur(y->droite));
-    x->taille = 1 + (gethauteur(x->gauche) > gethauteur(x->droite) ? gethauteur(x->gauche) : gethauteur(x->droite));
+    y->hauteur = 1 + (gethauteur(y->gauche) > gethauteur(y->droite) ? gethauteur(y->gauche) : gethauteur(y->droite));
+    x->hauteur = 1 + (gethauteur(x->gauche) > gethauteur(x->droite) ? gethauteur(x->gauche) : gethauteur(x->droite));
 
     return x;
 }
@@ -60,8 +60,8 @@ AVLNoeud* rotationGauche(AVLNoeud *x) {
     y->gauche = x;
     x->droite = T;
 
-    x->taille = 1 + (gethauteur(x->gauche) > gethauteur(x->droite) ? gethauteur(x->gauche) : gethauteur(x->droite));
-    y->taille = 1 + (gethauteur(y->gauche) > gethauteur(y->droite) ? gethauteur(y->gauche) : gethauteur(y->droite));
+    x->hauteur = 1 + (gethauteur(x->gauche) > gethauteur(x->droite) ? gethauteur(x->gauche) : gethauteur(x->droite));
+    y->hauteur = 1 + (gethauteur(y->gauche) > gethauteur(y->droite) ? gethauteur(y->gauche) : gethauteur(y->droite));
 
     return y;
 }
