@@ -109,8 +109,8 @@ if [[ ! -f main ]]; then
 fi
 cd ..
 
-# Appel du programme C
-./codeC/main "$FILTERED_FILE" "$OUTPUT_FILE" "$STATION_TYPE"
+# Exécution du programme C
+./codeC/projetwire "$FILTERED_FILE" "$OUTPUT_FILE" "$STATION_TYPE"
 
 # Gestion spéciale pour lv all avec graphique et minmax
 if [[ "$STATION_TYPE" == "lv" && "$CONSUMER_TYPE" == "all" ]]; then
