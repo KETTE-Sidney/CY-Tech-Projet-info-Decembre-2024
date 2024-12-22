@@ -1,1 +1,57 @@
+Le projet C-Wire consiste à développer un programme permettant de synthétiser les données d’un système de distribution d’électricité. Ce projet combine l'utilisation d'un script Shell pour le filtrage des données et d'un programme en langage C pour leur traitement. L'objectif est d'analyser les stations électriques (centrales, sous-stations HV-B, HV-A, et postes LV) pour détecter les situations de surproduction ou de sous-production et évaluer la répartition de l'énergie entre consommateurs.
 
+Description du Projet
+Le système énergétique étudié repose sur une topologie arborescente représentant les flux d’énergie depuis les centrales jusqu’aux consommateurs finaux. Le projet exploite un fichier CSV contenant des millions de lignes simulant des données énergétiques. Les principales fonctionnalités sont les suivantes :
+* Filtrage et extraction des données pertinentes via un script Shell.
+* Traitement efficace des données avec un programme C utilisant un arbre AVL.
+* Calcul des consommations totales par type de station.
+* Génération des résultats dans des fichiers CSV structurés.
+
+Organisation de l'Équipe et Répartition des Tâches
+L'équipe de développement s'est organisée autour des points clés du projet :
+1. Conception des Structures de Données et Algorithmes AVL :
+    * Réalisation par Romain.
+2. Développement du Script Shell :
+    * Réalisation  : Sidney
+3. Gestion des entrées/sorties et Manipulation des Fichiers :
+    * Réalisation: Oumar.
+4. Test et Validation du Programme :
+    * Réalisé conjointement.
+
+Outils et Méthodologie
+* Environnement de Développement :
+    * Utilisation de Replit pour faciliter le travail collaboratif.
+    * Partage de code via GitHub pour versionner le projet.
+* Approche Agile :
+    * Sessions régulières sur Discord pour faire le point sur les avancées.
+    * Répartition des tâches selon les forces de chaque membre.
+
+Difficultés Rencontrées et Solutions
+1. Gestion de la Mémoire dans le Programme C
+* Problème : Des erreurs de segmentation dues à une mauvaise gestion des allocations dynamiques.
+* Solution : Adoption de malloc et realloc avec des vérifications rigoureuses des retours.
+2. Validation des Entrées
+* Problème : Données incohérentes dans le fichier CSV (dates invalides, champs vides).
+* Solution : Implémentation de filtres pour détecter et ignorer les lignes mal formatées.
+3. Compilation et Dépendances
+* Problème : Difficultés à configurer le Makefile pour inclure tous les modules.
+* Solution : Utilisation de chemins relatifs et inclusion explicite de tous les fichiers sources.
+4. Performances
+* Problème : Temps de traitement élevé dû au volume de données.
+* Solution : Optimisation des structures AVL pour garantir un traitement en temps logarithmique.
+5. Mise en Commun des Modules
+* Problème : Conflits lors de l'intégration du script Shell et du programme C.
+* Solution : Tests unitaires sur chaque module avant intégration complète.
+      
+Résultats Obtenus
+Le projet a permis de réaliser une solution conforme au cahier des charges :
+* Script Shell :
+    * Extraction et filtrage des données selon les options utilisateur.
+    * Gestion des options interdites et des erreurs utilisateur.
+* Programme C :
+    * Calcul des consommations via un arbre AVL optimisé.
+    * Génération de fichiers CSV contenant les résultats structurés.
+* Performance :
+    * Traitement efficace des millions de lignes en quelques secondes.
+* Fiabilité :
+    * Gestion robuste des erreurs et des fichiers
