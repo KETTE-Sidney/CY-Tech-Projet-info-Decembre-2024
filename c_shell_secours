@@ -1,0 +1,137 @@
+#!/bin/bash
+
+# Fonction pour afficher l'aide
+show_help() {
+    echo "Usage: $0 <data_file> <output_directory> <station_type>"
+    echo
+    echo "Arguments:"
+    echo "  data_file       Chemin vers le fichier CSV d'entrée (obligatoire)."
+    echo "  output_directory Dossier pour enregistrer les résultats (obligatoire)."
+    echo "  station_type    Type de station à traiter (obligatoire) : hvb, hva, lv."
+    echo
+    echo "Options:"
+    echo "  -h              Afficher ce message d'aide."
+    echo
+    echo "Examples:"
+    echo "  $0 input.csv output/ hvb"
+    echo "  $0 input.csv output/ lv"
+    exit 0
+}
+
+# Vérification des arguments et affichage de l'aide si nécessaire
+if [[ "$1" == "-h" ]]; then
+    show_help
+fi
+
+if [[ $# -ne 3 ]]; then
+    echo "Erreur : Arguments manquants."
+    show_help
+fi
+
+# Assignation des arguments
+DATA_FILE=$1
+OUTPUT_DIR=$2
+STATION_TYPE=$3
+
+# Validation du fichier d'entrée
+if [[ ! -f "$DATA_FILE" ]]; then
+    echo "Erreur : Fichier d'entrée '$DATA_FILE' introuvable."
+    exit 1
+fi
+
+# Validation du type de station
+if [[ "$STATION_TYPE" != "hvb" && "$STATION_TYPE" != "hva" && "$STATION_TYPE" != "lv" ]]; then
+    echo "Erreur : Type de station invalide '$STATION_TYPE'. Doit être l'un des suivants : hvb, hva, lv."
+    exit 1
+fi
+
+# Création des répertoires nécessaires
+mkdir -p tmp "$OUTPUT_DIR" graphs
+
+# Fichier temporaire pour les données filtrées
+FILTERED_FILE="tmp/filtered_${STATION_TYPE}.csv"
+
+# Filtrage des données par type de station
+awk -F':' -v type="$STATION_TYPE" 'BEGIN { OFS=":"; print "StationID:Capacite:Consommation:Type" } $4 == type { print $1, $2, $3, $4 }' "$DATA_FILE" > "$FILTERED_FILE"
+
+# Vérification si des données ont été filtrées
+if [[ ! -s "$FILTERED_FILE" ]]; then
+    echo "Erreur : Aucune donnée trouvée pour le type de station '$STATION_TYPE'."
+    exit 1
+fi
+
+# Calcul des totaux et vérification de la production
+TOTAL_CAPACITE=$(awk -F':' 'NR > 1 { sum += $2 } END { print sum }' "$FILTERED_FILE")
+TOTAL_CONSOMMATION=$(awk -F':' 'NR > 1 { sum += $3 } END { print sum }' "$FILTERED_FILE")
+
+if [[ "$TOTAL_CAPACITE" -gt "$TOTAL_CONSOMMATION" ]]; then
+    PRODUCTION_STATUS="Sous-production"
+elif [[ "$TOTAL_CAPACITE" -lt "$TOTAL_CONSOMMATION" ]]; then
+    PRODUCTION_STATUS="Surproduction"
+else
+    PRODUCTION_STATUS="Équilibrée"
+fi
+
+# Écriture des résultats dans un fichier de résumé
+SUMMARY_FILE="$OUTPUT_DIR/summary_${STATION_TYPE}.txt"
+echo "Résumé des stations ($STATION_TYPE):" > "$SUMMARY_FILE"
+echo "Capacité totale : $TOTAL_CAPACITE" >> "$SUMMARY_FILE"
+echo "Consommation totale : $TOTAL_CONSOMMATION" >> "$SUMMARY_FILE"
+echo "Production globale : $PRODUCTION_STATUS" >> "$SUMMARY_FILE"
+
+# Compilation et exécution du programme C
+make -s
+if [[ $? -ne 0 ]]; then
+    echo "Erreur : La compilation du programme C a échoué."
+    exit 1
+fi
+
+OUTPUT_FILE="$OUTPUT_DIR/results_${STATION_TYPE}.csv"
+./bin/main "$FILTERED_FILE" "$OUTPUT_FILE" "$STATION_TYPE"
+
+if [[ $? -ne 0 ]]; then
+    echo "Erreur : Le programme C a rencontré un problème."
+    exit 1
+fi
+
+# Gestion des graphiques pour "lv all"
+if [[ "$STATION_TYPE" == "lv" ]]; then
+    GRAPH_FILE="graphs/lv_minmax.png"
+    MINMAX_FILE="$OUTPUT_DIR/lv_minmax.csv"
+
+    echo "StationID:Capacite:Consommation" > "$MINMAX_FILE"
+
+    # Extraction des 10 stations avec la plus forte consommation
+    tail -n +2 "$OUTPUT_FILE" | sort -t: -k3nr | head -n 10 >> "$MINMAX_FILE"
+
+    # Extraction des 10 stations avec la plus faible consommation
+    tail -n +2 "$OUTPUT_FILE" | sort -t: -k3n | head -n 10 >> "$MINMAX_FILE"
+
+    # Génération du graphique
+    gnuplot <<-EOF
+        set terminal png size 1000,700
+        set output "$GRAPH_FILE"
+        set title "Top and Bottom 10 LV Stations"
+        set xlabel "Station ID"
+        set ylabel "Energy (kWh)"
+        set grid
+        set style data histogram
+        set style histogram cluster gap 1
+        set style fill solid
+        set boxwidth 0.9
+        plot "$MINMAX_FILE" using 2:xtic(1) title "Capacity", \
+             "$MINMAX_FILE" using 3:xtic(1) title "Consumption"
+EOF
+    echo "Graphique généré : $GRAPH_FILE"
+fi
+
+# Afficher un résumé
+echo "Résumé des résultats pour le type de station '$STATION_TYPE' :"
+cat "$SUMMARY_FILE"
+
+# Nettoyage
+rm "$FILTERED_FILE"
+
+# Message de fin
+echo "Résultats enregistrés dans '$OUTPUT_FILE' et '$SUMMARY_FILE'."
+echo "Traitement terminé avec succès."
