@@ -149,41 +149,40 @@ void parcoursInfixe(AVLNoeud *racine) {
 }
 
 void freeAVL(AVLNoeud *racine) {
-    if (racine) {
+    if (!racine) return;
         freeAVL(racine->gauche);
         freeAVL(racine->droite);
         free(racine);
-    }
 }
 
-
-// Traitement du fichier CSV
-void lireCSV(const char *filename, AVLNoeud **racine) {
-    FILE *file = fopen(filename, "r");
-    if (!file) {
-        perror("Erreur lors de l'ouverture du fichier d'entrée");
+// Lire un fichier CSV et remplir l'arbre AVL
+AVLNoeud* lireCSV(const char* nomFichier) {
+    FILE* fichier = fopen(nomFichier, "r");
+    if (!fichier) {
+        perror("Échec de l'ouverture du fichier CSV");
         exit(1);
     }
 
-   char line[256];
-    while (fgets(line, sizeof(line), file)) {
+    AVLNoeud* racine = NULL;
+    char ligne[256];
+    while (fgets(ligne, sizeof(ligne), fichier)) {
         int stationID;
         long capacite = 0, consommation = 0;
-        char type_station[10], type_consommateur[10];
+        // Lecture des colonnes du fichier CSV
+        sscanf(ligne, "%d;%ld;%ld", &stationID, &capacite, &consommation);
+        racine = insererNoeud(racine, stationID, capacite, consommation);
+    }
 
-        // Lecture des colonnes du fichier CSV (modifiez selon votre format exact)
-        sscanf(line, "%d;%ld;%ld;%[^;];%[^;]", &stationID, &capacite, &consommation, type_station, type_consommateur);
+    fclose(fichier);
+    return racine;
+}
 
         // Appliquer les filtres en fonction des arguments
-        if ((strcmp(station_type, "all") == 0 || strcmp(station_type, type_station) == 0) &&
+       /*if ((strcmp(station_type, "all") == 0 || strcmp(station_type, type_station) == 0) &&
             (strcmp(consumer_type, "all") == 0 || strcmp(consumer_type, type_consommateur) == 0) &&
             (plant_id == -1 || plant_id == stationID)) {
             *racine = insererNoeud(*racine, stationID, capacite, consommation);
-        }
-    }
-
-    fclose(file);
-}
+        }*/
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
@@ -191,24 +190,25 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    const char* input_file = argv[1];
-    const char* output_file = argv[2];
-    const char *station_type = argv[3];
-    
-    AVLNoeud *racine = NULL;
+    const char* input = argv[1];
+    const char* output = argv[2];
 
-    lireCSV(argv[1], &racine);
+    AVLNoeud* racine = lireCSV(input);
 
-FILE* output = fopen(output_file, "w");
-    if (!output) {
-        perror("Erreur lors de l'ouverture du fichier de sortie.");
-        fclose(input);
-        return 1;
+    FILE* fichierResultat = fopen(output, "w");
+    if (!fichierResultat) {
+        perror("Échec de l'ouverture du fichier de sortie");
+        freeAVL(racine);
+        exit(1);
     }
 
-    printf("Contenu de l'arbre AVL :\n");
-    parcoursInfixe(racine);
-    freeAVL(racine);
+    fprintf(fichierResultat, "StationID:Capacite:Consommation\n");
+    ecrireDansCSV(racine, fichierResultat);
+
+    fclose(fichierResultat);
+    libererAVL(racine);
+
+    printf("Résultats sauvegardés dans %s\n", output);
 
     return 0;
 }
