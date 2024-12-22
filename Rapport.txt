@@ -36,6 +36,9 @@ Difficultés Rencontrées et Solutions
 3. Compilation et Dépendances
 * Problème : Difficultés à configurer le Makefile pour inclure tous les modules.
 * Solution : Utilisation de chemins relatifs et inclusion explicite de tous les fichiers sources.
+* Difficultés a executer le programme shell sur windows
+* Solution 
+
 4. Performances
 * Problème : Temps de traitement élevé dû au volume de données.
 * Solution : Optimisation des structures AVL pour garantir un traitement en temps logarithmique.
@@ -43,15 +46,12 @@ Difficultés Rencontrées et Solutions
 * Problème : Conflits lors de l'intégration du script Shell et du programme C.
 * Solution : Tests unitaires sur chaque module avant intégration complète.
       
-Résultats Obtenus
-Le projet a permis de réaliser une solution conforme au cahier des charges :
-* Script Shell :
-    * Extraction et filtrage des données selon les options utilisateur.
-    * Gestion des options interdites et des erreurs utilisateur.
-* Programme C :
-    * Calcul des consommations via un arbre AVL optimisé.
-    * Génération de fichiers CSV contenant les résultats structurés.
-* Performance :
-    * Traitement efficace des millions de lignes en quelques secondes.
-* Fiabilité :
-    * Gestion robuste des erreurs et des fichiers
+Probemes majeurs rencontrer : 
+Description : Après l’exécution, les fichiers étaient bien triés par type (HVB, HVA), mais des erreurs survenaient lors du traitement des données par le programme C.
+
+Potentiel raison du probleme : 
+* Probablement dus à des incohérences entre le filtrage dans le script Shell et les attentes du programme C.
+apres execution le fichier est bien trier en fonction des HVB HVA, or au moment de l'execution du C on rencontre des difficultées a renvoyers les données.
+* Le code C ne prend pas en consideration toute la partie tri du shell ce qui empeche le bon deroulement du porgramme
+
+* Autre possibilité probleme de lecture de l'AVL ce qui empeche le tri par type de stations 
