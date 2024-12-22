@@ -1,19 +1,23 @@
-# Compiler and flags
+# Variables
 CC = gcc
-CFLAGS = -Wall -Werror -g
+CFLAGS = -Wall -Wextra -g
+TARGET = projetwire
+SHELL_SCRIPT = c-wire.sh
 
-# Targets
-all: main
+# Cibles principales
+all: $(TARGET)
 
-# Linking the executable
-main: projetwire.o
-        $(CC) $(CFLAGS) -o main projetwire.o
+$(TARGET): projetwire.c
+	$(CC) $(CFLAGS) -o $(TARGET) projetwire.c
 
-# Compiling the main file
-projetwire.o: projetwire.c
-        $(CC) $(CFLAGS) -c projetwire.c
-
-
-# Cleaning up generated files
+# Nettoyage
 clean:
-        rm -f *.o main
+	rm -f $(TARGET)
+
+# Exécution
+run: $(TARGET)
+	./$(TARGET)
+
+script:
+	chmod +x $(SHELL_SCRIPT)
+	./$(SHELL_SCRIPT)
