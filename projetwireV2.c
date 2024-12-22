@@ -211,7 +211,7 @@ int main(int argc, char *argv[]) {
     ecrireDansCSV(racine, fichierResultat);
 
     fclose(fichierResultat);
-    libererAVL(racine);
+    freeAVL(racine);
 
     printf("Résultats sauvegardés dans %s\n", output);
 
