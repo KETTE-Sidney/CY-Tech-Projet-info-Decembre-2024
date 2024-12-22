@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Nom du script : c-wire.sh
+
 
 # Vérification des arguments et option d'aide
 if [[ "$1" == "-h" || $# -lt 3 ]]; then
