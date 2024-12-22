@@ -169,7 +169,12 @@ AVLNoeud* lireCSV(const char* nomFichier) {
         int stationID;
         long capacite = 0, consommation = 0;
         // Lecture des colonnes du fichier CSV
-        sscanf(ligne, "%d;%ld;%ld", &stationID, &capacite, &consommation);
+        ligne[strcspn(ligne, "\n")] = '\0';  
+        // **Suppression du saut de ligne**
+
+        sscanf(ligne, "%d:%ld:%ld", &stationID, &capacite, &consommation);  // **Utilisation de ':' comme séparateur**
+        if (stationID == 0) continue;  
+
         racine = insererNoeud(racine, stationID, capacite, consommation);
     }
 
