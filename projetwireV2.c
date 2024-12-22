@@ -140,13 +140,13 @@ AVLNoeud* rechercherStation(AVLNoeud *racine, int stationID) {
     return rechercherStation(racine->droite, stationID);
 }
 
-void parcoursInfixe(AVLNoeud *racine) {
-    if (racine) {
-        parcoursInfixe(racine->gauche);
+void parcoursInfixe(AVLNoeud *racine, FILE* fichier) {
+    if (!racine) return;
+        parcoursInfixe(racine->gauche, fichier);
         printf("Station ID: %d, Capacite: %ld, Consommation: %ld\n", racine->stationID, racine->capacite, racine->consommation);
-        parcoursInfixe(racine->droite);
+        parcoursInfixe(racine->droite, fichier);
     }
-}
+
 
 void freeAVL(AVLNoeud *racine) {
     if (!racine) return;
@@ -186,6 +186,7 @@ int main(int argc, char *argv[]) {
 
     const char* input = argv[1];
     const char* output = argv[2];
+    const char *station_type = argv[3];
 
     AVLNoeud* racine = lireCSV(input);
 
@@ -208,7 +209,7 @@ int main(int argc, char *argv[]) {
     }
 
     fprintf(fichierResultat, "StationID:Capacite:Consommation\n");
-    ecrireDansCSV(racine, fichierResultat);
+    parcoursInfixe(racine, fichierResultat);
 
     fclose(fichierResultat);
     freeAVL(racine);
