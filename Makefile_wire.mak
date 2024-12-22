@@ -1,25 +1,19 @@
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -g
+CFLAGS = -Wall -Werror -g
 
-# Target
-TARGET = projetwire
+# Targets
+all: main
 
-.PHONY: all clean run
+# Linking the executable
+main: projetwire.o
+        $(CC) $(CFLAGS) -o main projetwire.o
 
-# Default target
-all: $(TARGET)
+# Compiling the main file
+main.o: projetwire.c
+        $(CC) $(CFLAGS) -c projetwire.c
 
-# Compile the program
-$(TARGET): projetwire.c
-	$(CC) $(CFLAGS) -o $@ $<
 
-# Clean build files
+# Cleaning up generated files
 clean:
-	rm -f $(TARGET)
-
-# Run the program
-run: all
-	chmod +x c-wire.sh
-	./c-wire.sh input.csv hvb comp
-
+        rm -f *.o main
