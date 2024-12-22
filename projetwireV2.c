@@ -101,7 +101,17 @@ AVLNoeud* insererNoeud(AVLNoeud *noeud, int stationID, long capacite, long conso
 
     return noeud;
 }
-
+// fonction detecter sur ou sous production
+/*const char* verifierProduction(long capacite, long consommation) {
+    if (capacite > consommation) {
+        return "Sous-production";
+    } else if (capacite < consommation) { //
+        return "Surproduction";
+    } else {
+        return "Équilibrée";
+    }
+}
+*/
 void parcoursInfixe(AVLNoeud *racine) {
     if (racine) {
         parcoursInfixe(racine->gauche);
