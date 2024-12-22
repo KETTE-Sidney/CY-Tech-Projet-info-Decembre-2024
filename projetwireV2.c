@@ -189,6 +189,17 @@ int main(int argc, char *argv[]) {
 
     AVLNoeud* racine = lireCSV(input);
 
+     // Calculer les statistiques
+    long totalCapacite = sommeCapacites(racine);
+    long totalConsommation = sommeConsommations(racine);
+
+    // Afficher les résultats
+    printf("\nRésumé:\n");
+    printf("Capacité totale: %ld\n", totalCapacite);
+    printf("Consommation totale: %ld\n", totalConsommation);
+    printf("Production globale: %s\n", verifierProduction(totalCapacite, totalConsommation));
+
+
     FILE* fichierResultat = fopen(output, "w");
     if (!fichierResultat) {
         perror("Échec de l'ouverture du fichier de sortie");
