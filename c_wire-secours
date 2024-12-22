@@ -1,0 +1,203 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct AVLNoeud {
+    int stationID;
+    long capacite;   // Capacité en kWh
+    long consommation; // Consommation totale des consommateurs
+    char type[4];    // Type de station (hvb, hva, lv)
+    int hauteur;
+    struct AVLNoeud *gauche;
+    struct AVLNoeud *droite;
+} AVLNoeud;
+
+AVLNoeud* creerNoeud(int stationID, long capacite, long consommation, const char* type) {
+    AVLNoeud *noeud = (AVLNoeud*)malloc(sizeof(AVLNoeud));
+    if (!noeud) {
+        perror("Erreur d'allocation mémoire");
+        exit(1);
+    }
+    noeud->stationID = stationID;
+    noeud->capacite = capacite;
+    noeud->consommation = consommation;
+    strncpy(noeud->type, type, 3);
+    noeud->type[3] = '\0'; // Assurer la terminaison de la chaîne
+    noeud->hauteur = 1;
+    noeud->gauche = noeud->droite = NULL;
+    return noeud;
+}
+
+int getHauteur(AVLNoeud *noeud) {
+    return noeud ? noeud->hauteur : 0;
+}
+
+int equilibre(AVLNoeud *noeud) {
+    return noeud ? getHauteur(noeud->gauche) - getHauteur(noeud->droite) : 0;
+}
+
+AVLNoeud* rotationDroite(AVLNoeud *y) {
+    AVLNoeud *x = y->gauche;
+    AVLNoeud *T = x->droite;
+
+    x->droite = y;
+    y->gauche = T;
+
+    y->hauteur = 1 + (getHauteur(y->gauche) > getHauteur(y->droite) ? getHauteur(y->gauche) : getHauteur(y->droite));
+    x->hauteur = 1 + (getHauteur(x->gauche) > getHauteur(x->droite) ? getHauteur(x->gauche) : getHauteur(x->droite));
+
+    return x;
+}
+
+AVLNoeud* rotationGauche(AVLNoeud *x) {
+    AVLNoeud *y = x->droite;
+    AVLNoeud *T = y->gauche;
+
+    y->gauche = x;
+    x->droite = T;
+
+    x->hauteur = 1 + (getHauteur(x->gauche) > getHauteur(x->droite) ? getHauteur(x->gauche) : getHauteur(x->droite));
+    y->hauteur = 1 + (getHauteur(y->gauche) > getHauteur(y->droite) ? getHauteur(y->gauche) : getHauteur(y->droite));
+
+    return y;
+}
+
+AVLNoeud* insererNoeud(AVLNoeud *noeud, int stationID, long capacite, long consommation, const char* type) {
+    if (!noeud) return creerNoeud(stationID, capacite, consommation, type);
+
+    if (stationID < noeud->stationID)
+        noeud->gauche = insererNoeud(noeud->gauche, stationID, capacite, consommation, type);
+    else if (stationID > noeud->stationID)
+        noeud->droite = insererNoeud(noeud->droite, stationID, capacite, consommation, type);
+    else { // Si le nœud existe déjà, on met à jour sa consommation
+        noeud->consommation += consommation;
+        return noeud;
+    }
+
+    noeud->hauteur = 1 + (getHauteur(noeud->gauche) > getHauteur(noeud->droite) ? getHauteur(noeud->gauche) : getHauteur(noeud->droite));
+
+    int h = equilibre(noeud);
+
+    // Rotation pour équilibrer
+    if (h > 1 && stationID < noeud->gauche->stationID)
+        return rotationDroite(noeud);
+
+    if (h < -1 && stationID > noeud->droite->stationID)
+        return rotationGauche(noeud);
+
+    if (h > 1 && stationID > noeud->gauche->stationID) {
+        noeud->gauche = rotationGauche(noeud->gauche);
+        return rotationDroite(noeud);
+    }
+
+    if (h < -1 && stationID < noeud->droite->stationID) {
+        noeud->droite = rotationDroite(noeud->droite);
+        return rotationGauche(noeud);
+    }
+
+    return noeud;
+}
+
+const char* verifierProduction(long capacite, long consommation) {
+    if (capacite > consommation) {
+        return "Sous-production";
+    } else if (capacite < consommation) {
+        return "Surproduction";
+    } else {
+        return "Équilibrée";
+    }
+}
+
+long sommeConsommations(AVLNoeud *racine, const char* type) {
+    if (!racine) return 0;
+    if (strcmp(racine->type, type) == 0)
+        return racine->consommation + sommeConsommations(racine->gauche, type) + sommeConsommations(racine->droite, type);
+    return sommeConsommations(racine->gauche, type) + sommeConsommations(racine->droite, type);
+}
+
+long sommeCapacites(AVLNoeud *racine, const char* type) {
+    if (!racine) return 0;
+    if (strcmp(racine->type, type) == 0)
+        return racine->capacite + sommeCapacites(racine->gauche, type) + sommeCapacites(racine->droite, type);
+    return sommeCapacites(racine->gauche, type) + sommeCapacites(racine->droite, type);
+}
+
+void parcoursInfixe(AVLNoeud *racine, FILE* fichier) {
+    if (!racine) return;
+
+    parcoursInfixe(racine->gauche, fichier);
+    fprintf(fichier, "%d:%ld:%ld:%s\n", racine->stationID, racine->capacite, racine->consommation, racine->type);
+    parcoursInfixe(racine->droite, fichier);
+}
+
+AVLNoeud* lireCSV(const char* nomFichier, const char* typeFiltre) {
+    FILE* fichier = fopen(nomFichier, "r");
+    if (!fichier) {
+        perror("Échec de l'ouverture du fichier CSV");
+        exit(1);
+    }
+
+    AVLNoeud* racine = NULL;
+    char ligne[256];
+    while (fgets(ligne, sizeof(ligne), fichier)) {
+        int stationID;
+        long capacite, consommation;
+        char type[4];
+
+        sscanf(ligne, "%d:%ld:%ld:%3s", &stationID, &capacite, &consommation, type);
+        if (strcmp(type, typeFiltre) == 0)
+            racine = insererNoeud(racine, stationID, capacite, consommation, type);
+    }
+
+    fclose(fichier);
+    return racine;
+}
+
+void freeAVL(AVLNoeud *racine) {
+    if (!racine) return;
+    freeAVL(racine->gauche);
+    freeAVL(racine->droite);
+    free(racine);
+}
+
+int main(int argc, char *argv[]) {
+    if (argc != 4) {
+        fprintf(stderr, "Usage: %s <fichier CSV> <output_file> <type_station>\n", argv[0]);
+        return 1;
+    }
+
+    const char* input = argv[1];
+    const char* output = argv[2];
+    const char* type_station = argv[3];
+
+    AVLNoeud* racine = lireCSV(input, type_station);
+    if (!racine) {
+        fprintf(stderr, "Aucune donnée valide trouvée pour le type de station '%s'.\n", type_station);
+        return 1;
+    }
+
+    long totalCapacite = sommeCapacites(racine, type_station);
+    long totalConsommation = sommeConsommations(racine, type_station);
+
+    printf("\nRésumé pour les stations de type '%s':\n", type_station);
+    printf("Capacité totale: %ld\n", totalCapacite);
+    printf("Consommation totale: %ld\n", totalConsommation);
+    printf("Production globale: %s\n", verifierProduction(totalCapacite, totalConsommation));
+
+    FILE* fichierResultat = fopen(output, "w");
+    if (!fichierResultat) {
+        perror("Échec de l'ouverture du fichier de sortie");
+        freeAVL(racine);
+        exit(1);
+    }
+
+    fprintf(fichierResultat, "StationID:Capacite:Consommation:Type\n");
+    parcoursInfixe(racine, fichierResultat);
+
+    fclose(fichierResultat);
+    freeAVL(racine);
+
+    printf("Résultats sauvegardés dans %s\n", output);
+
+    return 0;
+}
