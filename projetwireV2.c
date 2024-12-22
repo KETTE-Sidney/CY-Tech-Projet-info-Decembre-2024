@@ -177,12 +177,6 @@ AVLNoeud* lireCSV(const char* nomFichier) {
     return racine;
 }
 
-        // Appliquer les filtres en fonction des arguments
-       /*if ((strcmp(station_type, "all") == 0 || strcmp(station_type, type_station) == 0) &&
-            (strcmp(consumer_type, "all") == 0 || strcmp(consumer_type, type_consommateur) == 0) &&
-            (plant_id == -1 || plant_id == stationID)) {
-            *racine = insererNoeud(*racine, stationID, capacite, consommation);
-        }*/
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
