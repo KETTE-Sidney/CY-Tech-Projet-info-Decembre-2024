@@ -1,118 +1,147 @@
 #!/bin/bash
 
-# Shell Script for the C-Wire Project
-# Usage: ./c-wire.sh csv_file_path station_type consumer_type [plant_id]
+# Fonction pour afficher l'aide
+show_help() {
+    echo "Usage: $0 <data_file> <station_type> <consumer_type> [central_id]"
+    echo
+    echo "Arguments:"
+    echo "  data_file       Chemin vers le fichier CSV d'entrée (obligatoire)"
+    echo "  station_type    Type de station à traiter (obligatoire) : hvb, hva, lv"
+    echo "  consumer_type   Type de consommateur à traiter (obligatoire) : comp, indiv, all"
+    echo "                  Remarque : hvb indiv, hvb all, hva indiv, hva all ne sont pas autorisés."
+    echo "  central_id      Optionnel : Filtrer les résultats par ID central."
+    echo
+    echo "Options:"
+    echo "  -h              Afficher ce message d'aide."
+    echo
+    echo "Exemples:"
+    echo "  $0 input/data.csv lv all"
+    echo "  $0 input/data.csv hva comp 1"
+    exit 0
+}
 
-start=$(date +%s)
+# Afficher l'aide si demandé
+if [[ "$1" == "-h" ]]; then
+    show_help
+fi
 
-# verification des parametres
-if [ "$#" -lt 3 ]; then
-    echo "Erreur: nombre de parametre insuffisant."
-    echo "Usage: ./c-wire.sh csv_file_path station_type consumer_type [plant_id]"
+# Vérification du nombre d'arguments
+if [[ $# -lt 3 ]]; then
+    echo "Erreur : Arguments manquants."
+    show_help
+fi
+
+# Affectation des arguments à des variables
+DATA_FILE=$1
+STATION_TYPE=$2
+CONSUMER_TYPE=$3
+CENTRAL_ID=${4:-"all"} # Défaut à "all" si non spécifié
+
+# Validation du fichier d'entrée
+if [[ ! -f "$DATA_FILE" ]]; then
+    echo "Erreur : Fichier d'entrée '$DATA_FILE' introuvable."
     exit 1
 fi
 
-# Recuperation des parametres
-csv_file="$1"
-station_type="$2"
-consumer_type="$3"
-plant_id="${4:--1}" # mettre à -1 par defaut si non fourni
-
-# Verification du fichier d'entrée
-if [ ! -f "$csv_file" ]; then
-    echo "Error: le fichier $csv_file n'existe pas."
+# Validation du type de station
+if [[ "$STATION_TYPE" != "hvb" && "$STATION_TYPE" != "hva" && "$STATION_TYPE" != "lv" ]]; then
+    echo "Erreur : Type de station invalide '$STATION_TYPE'. Doit être l'un des suivants : hvb, hva, lv."
     exit 1
 fi
 
-# Verification du type de station
-if [[ "$station_type" != "hvb" && "$station_type" != "hva" && "$station_type" != "lv" ]]; then
-    echo "Erreur: Type de station invalide. Les options valides sont: hvb, hva, lv."
+# Validation du type de consommateur
+if [[ "$CONSUMER_TYPE" != "comp" && "$CONSUMER_TYPE" != "indiv" && "$CONSUMER_TYPE" != "all" ]]; then
+    echo "Erreur : Type de consommateur invalide '$CONSUMER_TYPE'. Doit être l'un des suivants : comp, indiv, all."
     exit 1
 fi
 
-# Verification du type de consommateur
-if [[ "$consumer_type" != "comp" && "$consumer_type" != "indiv" && "$consumer_type" != "all" ]]; then
-    echo "Erreur: Type de consommateur invalide. Les options valides sont: comp, indiv, all."
+# Vérification des combinaisons invalides de type de station et de consommateur
+if { [[ "$STATION_TYPE" == "hvb" || "$STATION_TYPE" == "hva" ]] && [[ "$CONSUMER_TYPE" == "all" || "$CONSUMER_TYPE" == "indiv" ]]; }; then
+    echo "Erreur : Type de consommateur '$CONSUMER_TYPE' n'est pas autorisé avec le type de station '$STATION_TYPE'."
     exit 1
 fi
 
-# verification Plant ID (si fourni)
-if [ "$plant_id" != "-1" ]; then
-    echo "Checking plant ID: $plant_id"
-    valid_id=$(awk -F';' -v id="$plant_id" '$1 == id {print $1; exit}' "$csv_file")
-    if [ -z "$valid_id" ]; then
-        echo "Erreur: plant ID $plant_id n'existe pas dans le fichier."
-        exit 1
-    fi
-fi
+# Création des répertoires nécessaires
+mkdir -p tmp tests graphs
 
-# Interdiction de certaines options
-if [[ "$station_type" == "hvb" && ( "$consumer_type" == "all" || "$consumer_type" == "indiv" ) ]]; then
-    echo "Erreur: Options hvb all ou hvb indiv non autorise."
-    exit 1
-fi
-
-if [[ "$station_type" == "hva" && ( "$consumer_type" == "all" || "$consumer_type" == "indiv" ) ]]; then
-    echo "Erreur: Options hva all or hva indiv non autorise."
-    exit 1
-fi
-
-# Creation des dossiers necessaires
-mkdir -p tmp output
-
-# remove du dossier tmp
-rm -f tmp/*
-rm -f output/*
-
-# Creation des fichiers temporaires
-if [ "$plant_id" == "-1" ]; then
-    filtered_file="tmp/filter_${station_type}_${consumer_type}.csv"
-else
-    filtered_file="tmp/filter_${station_type}_${consumer_type}_${plant_id}.csv"
-fi
-
-# Filtrage des données du fichiers CSV
-awk -F';' -v station="$station_type" -v consumer="$consumer_type" -v plant="$plant_id" '
-BEGIN { OFS=";" }
+# Filtrage des données
+FILTERED_FILE="tmp/filtered_data.csv"
+awk -F ";" -v station="$STATION_TYPE" -v consumer="$CONSUMER_TYPE" -v central="$CENTRAL_ID" '
+BEGIN { OFS = ":" }
 {
-    if (station == "hvb" && $2 != "-" && $6 == "-" && (consumer == "comp" || consumer == "all")) {
-        if (plant == "-1" || $1 == plant) print $0;
+    if (central == "all" || $1 == central) {
+        if (station == "hvb" && consumer == "comp" && $2 != "-") {
+            print $2, $7, $8
+        } else if (station == "hva" && consumer == "comp" && $3 != "-") {
+            print $3, $7, $8
+        } else if (station == "lv" && consumer == "comp" && $4 != "-" && ($5 != "-" || $7 != "-")) {
+            print $4, $7, $8
+        } else if (station == "lv" && consumer == "indiv" && $4 != "-" && ($6 != "-" || $7 != "-")) {
+            print $4, $7, $8
+        } else if (station == "lv" && consumer == "all" && $4 != "-") {
+            print $4, $7, $8
+        }
     }
-    else if (station == "hva" && $3 != "-" && $6 == "-" && (consumer == "comp" || consumer == "all")) {
-        if (plant == "-1" || $1 == plant) print $0;
-    }
-    else if (station == "lv" && $4 != "-" && $1 != "Power plant" && (consumer == "comp" || consumer == "indiv" || consumer == "all")) {
-        if (plant == "-1" || $1 == plant) print $0;
-    }
-}' "$csv_file" > "$filtered_file"
+}' "$DATA_FILE" > "$FILTERED_FILE"
 
-if [ ! -s "$filtered_file" ]; then
-    echo "Erreur: Aucune donnee trouve pour ce parametre."
+# Vérification si le fichier filtré est vide
+if [[ ! -s "$FILTERED_FILE" ]]; then
+    echo "Erreur : Aucune donnée trouvée correspondant aux filtres."
     exit 1
 fi
 
-echo "Donnees filtrees sauvegardees dans $filtered_file"
+# Préparation du nom du fichier de sortie
+OUTPUT_FILE="tests/${STATION_TYPE}_${CONSUMER_TYPE}"
+if [[ "$CENTRAL_ID" != "all" ]]; then
+    OUTPUT_FILE="${OUTPUT_FILE}_${CENTRAL_ID}"
+fi
+OUTPUT_FILE="${OUTPUT_FILE}.csv"
 
-# Verification et compilation du preogramme C
-if [ ! -f "codeC/bin/main" ]; then
+# Compilation du programme C si nécessaire
+cd codeC
+if [[ ! -f main ]]; then
     echo "Compilation du programme C..."
-    make -s -C codeC
-    if [ $? -ne 0 ]; then
-        echo "Erreur: echec de compilation du programme C."
+    make
+    if [[ $? -ne 0 ]]; then
+        echo "Erreur : La compilation a échoué."
         exit 1
     fi
 fi
+cd ..
 
-# Execution du programme C
-echo "Execution du programme..."
-./codeC/bin/main "$station_type" "$consumer_type" "$plant_id"
-if [ $? -ne 0 ]; then
-    echo "Erreur: Echec d'execution C program."
-    exit 1
+# Appel du programme C
+./codeC/main "$FILTERED_FILE" "$OUTPUT_FILE" "$STATION_TYPE"
+
+# Gestion spéciale pour lv all avec graphique et minmax
+if [[ "$STATION_TYPE" == "lv" && "$CONSUMER_TYPE" == "all" ]]; then
+    MINMAX_FILE="tests/lv_all_minmax.csv"
+    GRAPH_FILE="graphs/lv_all_minmax.png"
+
+    echo "StationID:Capacity:Consumption" > "$MINMAX_FILE"
+
+    # Extraire les 10 postes LV avec la consommation la plus élevée
+    tail -n +2 "$OUTPUT_FILE" | sort -t: -k3nr | head -n 10 >> "$MINMAX_FILE"
+
+    # Extraire les 10 postes LV avec la consommation la plus faible
+    tail -n +2 "$OUTPUT_FILE" | sort -t: -k3n | head -n 10 >> "$MINMAX_FILE"
+
+    # Générer un graphique avec GnuPlot
+    gnuplot -e "
+    set terminal png size 1000,700;
+    set output '$GRAPH_FILE';
+    set title 'Top and Bottom 10 LV Stations by Consumption';
+    set xlabel 'Station ID';
+    set ylabel 'Energy (kWh)';
+    set style data histogram;
+    set style histogram cluster gap 1;
+    set style fill solid border -1;
+    set boxwidth 0.8;
+    plot '$MINMAX_FILE' using 2:xtic(1) title 'Capacity', \
+         '' using 3 title 'Consumption';
+    "
+    echo "Graphique généré : $GRAPH_FILE"
 fi
 
-echo "Traitement termine."
+# Afficher un message de succès
+echo "Traitement terminé. Résultats enregistrés dans : $OUTPUT_FILE."
 
-end=$(date +%s)
-duration=$((end - start))
-echo "Temps d'execution: $duration s"
