@@ -19,39 +19,45 @@ L'équipe de développement s'est organisée autour des points clés du projet :
     * Réalisé conjointement.
 
 Outils et Méthodologie
-* Environnement de Développement :
+
+Environnement de Développement :
     * Utilisation de Replit pour faciliter le travail collaboratif.
     * Partage de code via GitHub pour versionner le projet.
-* Approche Agile :
-    * Sessions régulières sur Discord pour faire le point sur les avancées.
-    * Répartition des tâches selon les forces de chaque membre.
+
+Le groupe a organisé des Sessions régulières sur Discord pour faire le point sur les avancées et a effectué une répartition des tâches selon les forces de chaque membre pour que chacun puisse contribuer au mieux au projet.
 
 Difficultés Rencontrées et Solutions
+
 1. Gestion de la Mémoire dans le Programme C
 * Problème : Des erreurs de segmentation dues à une mauvaise gestion des allocations dynamiques.
 * Solution : Adoption de malloc et realloc avec des vérifications rigoureuses des retours.
+
 2. Validation des Entrées
 * Problème : Données incohérentes dans le fichier CSV (dates invalides, champs vides).
-* Solution : Implémentation de filtres pour détecter et ignorer les lignes mal formatées.
+* Solution : Implémentation de filtres pour détecter et ignorer les lignes mal formatées ou interdire certaines combinaisons.
+
 3. Compilation et Dépendances
 * Problème : Difficultés à configurer le Makefile pour inclure tous les modules.
 * Solution : Utilisation de chemins relatifs et inclusion explicite de tous les fichiers sources.
-* Difficultés a executer le programme shell sur windows
-* Solution 
+* Difficultés a exécuté le programme shell sur windows
 
 4. Performances
-* Problème : Temps de traitement élevé dû au volume de données.
-* Solution : Optimisation des structures AVL pour garantir un traitement en temps logarithmique.
+
+Problématique : Temps de traitement élevé dû au volume de données.
+Solution : Optimisation des structures AVL pour garantir un traitement en temps logarithmique.
+
 5. Mise en Commun des Modules
 * Problème : Conflits lors de l'intégration du script Shell et du programme C.
 * Solution : Tests unitaires sur chaque module avant intégration complète.
       
-Probemes majeurs rencontrer : 
+Problème majeur rencontré (non résolu) : 
 Description : Après l’exécution, les fichiers étaient bien triés par type (HVB, HVA), mais des erreurs survenaient lors du traitement des données par le programme C.
 
-Potentiel raison du probleme : 
+Potentielles raisons du probleme : 
 * Probablement dus à des incohérences entre le filtrage dans le script Shell et les attentes du programme C.
 apres execution le fichier est bien trier en fonction des HVB HVA, or au moment de l'execution du C on rencontre des difficultées a renvoyers les données.
-* Le code C ne prend pas en consideration toute la partie tri du shell ce qui empeche le bon deroulement du porgramme
+* Le code C ne prend pas en consideration toute la partie tri du shell ce qui empeche le bon deroulement du programme
 
 * Autre possibilité probleme de lecture de l'AVL ce qui empeche le tri par type de stations 
+
+Ou alors peut-être l'implémentation dans les fonctions de calcul et calcul permettrait la récupération des données triées. Malheureusement, l'équipe n'est pas parvenu à résoudre ce problème.
